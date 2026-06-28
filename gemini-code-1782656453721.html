@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学术检索模拟系统 - 词位置检索示范</title>
+    <style>
+        :root {
+            --primary-color: #003366;    /* 经典学术深蓝 */
+            --secondary-color: #1890ff;  /* 现代科技蓝 */
+            --bg-color: #f4f6f9;         /* 浅灰底色 */
+            --card-bg: #ffffff;          /* 白色卡片 */
+            --text-main: #333333;        /* 主要文字 */
+            --text-muted: #666666;      /* 次要文字 */
+            --border-color: #dcdfe6;    /* 边框线 */
+            --success-color: #28a745;   /* 成功绿 */
+            --warning-color: #e6a23c;   /* 警告金 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        /* 顶部导航栏布局 */
+        header {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            padding: 20px 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .logo-area p {
+            font-size: 13px;
+            color: #a0bfc7;
+            margin-top: 4px;
+        }
+
+        .system-status {
+            font-size: 12px;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* 快捷演示控制台面板（左侧/悬浮，极大增强教学便利性） */
+        .demo-panel {
+            max-width: 1200px;
+            margin: 20px auto 0 auto;
+            padding: 0 20px;
+        }
+        
+        .panel-box {
+            background: #eef3f8;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 20px;
+        }
+        .panel-box h3 {
+            font-size: 15px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        .demo-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .demo-btn {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+        .demo-btn:hover {
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+            background: #f0f7ff;
+        }
+        .demo-btn.active {
+            background: var(--secondary-color);
+            color: #fff;
+            border-color: var(--secondary-color);
+        }
+
+        /* 主体布局 */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 搜索核心区域卡片 */
+        .search-card {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 30px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* 检索模式单选按钮组 */
+        .search-modes {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 12px;
+        }
+
+        .mode-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .mode-label input[type="radio"] {
+            margin-right: 6px;
+            accent-color: var(--primary-color);
+        }
+
+        .mode-label.active {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* 词距配置区 */
+        .proximity-config {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: #fafafa;
+            padding: 8px 15px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+        
+        .proximity-config select {
+            padding: 2px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        /* 搜索框组合 */
+        .search-input-group {
+            display: flex;
+            width: 100%;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px 0 0 4px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-bar:focus {
+            box-shadow: 0 0 8px rgba(24, 144, 255, 0.2);
+        }
+
+        .search-btn {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            padding: 0 35px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-btn:hover {
+            background-color: #002244;
+        }
+
+        /* Loading 动画组件 */
+        .loading-wrapper {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 51, 102, 0.1);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 结果展示区基类 */
+        .results-container {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 统计与提示信息栏 */
+        .result-meta {
+            font-size: 15px;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .count-badge {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .alert-tip {
+            background-color: #fff7e6;
+            border: 1px solid #ffd591;
+            color: #d46b08;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 词位置系统原理解析面板 */
+        .explanation-panel {
+            background-color: #f6ffed;
+            border: 1px solid #b7eb8f;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .explanation-title {
+            color: #237804;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 文献展示卡片样式 */
+        .document-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .doc-header {
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .doc-tag {
+            font-size: 11px;
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .doc-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        /* 命中指标计算区样式 */
+        .metrics-bar {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 4px;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .distance-val {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* 绿色勾号动效 */
+        .check-status {
+            color: var(--success-color);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            animation: popCheck 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation-delay: 0.3s;
+        }
+
+        @keyframes popCheck {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 核心关键词高亮动效 */
+        .kw-highlight {
+            background-color: rgba(255, 235, 59, 0);
+            padding: 0 4px;
+            border-radius: 2px;
+            font-weight: 600;
+            animation: highlightPulse 0.6s ease-out forwards;
+        }
+        
+        /* 为不同的词提供不同亮色，方便观察物理位置 */
+        .kw-1 { --target-bg: #ffe58f; color: #d46b08; }
+        .kw-2 { --target-bg: #b7eb8f; color: #237804; }
+        .kw-3 { --target-bg: #adc6ff; color: #1d39c4; }
+
+        @keyframes highlightPulse {
+            to { background-color: var(--target-bg); }
+        }
+
+        /* 摘要排版 */
+        .doc-abstract {
+            font-size: 14px;
+            color: var(--text-main);
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #ccc;
+        }
+        .doc-abstract strong {
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* 底部流向图板 */
+        .flowchart-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .flowchart-section h2 {
+            font-size: 16px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .flow-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .flow-container { grid-template-columns: 1fr; }
+        }
+
+        .flow-column {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #eaeaea;
+        }
+
+        .flow-column h4 {
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+        }
+
+        .flow-nodes {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flow-node {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.3s;
+        }
+
+        .flow-node.active {
+            border-color: var(--secondary-color);
+            background: #e6f7ff;
+            color: var(--secondary-color);
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(24,144,255,0.2);
+        }
+
+        .flow-arrow {
+            color: #aaa;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <h1>学术检索模拟系统</h1>
+                <p>Academic Search Simulator — 词位置检索（Proximity Search）示范系统</p>
+            </div>
+            <div class="system-status">演示模式：交互活跃</div>
+        </div>
+    </header>
+
+    <section class="demo-panel">
+        <div class="panel-box">
+            <h3>💡 检索流转捷径（点击按阶段依次模拟演示）</h3>
+            <div class="demo-btns">
+                <button class="demo-btn" onclick="triggerDemo('information', this, 1)">第一阶段：检索 "information"</button>
+                <button class="demo-btn" onclick="triggerDemo('information service', this, 2)">第二阶段：检索 "information service"</button>
+                <button class="demo-btn" onclick="triggerDemo('information NEAR/3 service', this, 3)">第三阶段：精准位置检索 "information NEAR/3 service"</button>
+                <button class="demo-btn" onclick="resetDemo(this)">🔄 重置并开启第二组</button>
+                <button class="demo-btn" onclick="triggerDemo('information credibility', this, 4)">第二组初检索 "information credibility"</button>
+                <button class="demo-btn" onclick="triggerDemo('information NEAR/3 credibility', this, 5)">第二组位置检索 "information NEAR/3 credibility"</button>
+            </div>
+        </div>
+    </section>
+
+    <main>
+        <div class="search-card">
+            <div class="search-modes">
+                <label class="mode-label"><input type="radio" name="searchMode" value="boolean">布尔检索</label>
+                <label class="mode-label"><input type="radio" name="searchMode" value="phrase">词组检索</label>
+                <label class="mode-label"><input type="radio" name="searchMode" value="fuzzy">模糊检索</label>
+                <label class="mode-label"><input type="radio" name="searchMode" value="field">字段检索</label>
+                <label class="mode-label active"><input type="radio" name="searchMode" value="proximity" checked>词位置检索</label>
+            </div>
+
+            <div class="proximity-config">
+                <span>位置算符算式：</span>
+                <select id="proximitySelect">
+                    <option value="NEAR/3">NEAR/3 (两词间距≤3，顺序无关)</option>
+                    <option value="NEAR/5">NEAR/5 (两词间距≤5)</option>
+                </select>
+            </div>
+
+            <div class="search-input-group">
+                <input type="text" id="mainSearchInput" class="search-bar" placeholder="请输入检索词或算符表达式..." value="information NEAR/3 service">
+                <button class="search-btn" onclick="executeSearch()">
+                    <span>🔍</span> 执行检索
+                </button>
+            </div>
+        </div>
+
+        <div class="loading-wrapper" id="loadingSection">
+            <div class="spinner"></div>
+            <p style="color: var(--text-muted); font-size:14px;">系统正在扫描倒排索引数据库并计算词距物理矩阵...</p>
+        </div>
+
+        <div class="results-container" id="resultsSection">
+            <div id="metaOutput"></div>
+            
+            <div id="explanationOutput"></div>
+
+            <div id="documentsOutput"></div>
+        </div>
+
+        <section class="flowchart-section">
+            <h2>📊 检索策略优化全景流向图</h2>
+            <div class="flow-container">
+                
+                <div class="flow-column">
+                    <h4>第一组：服务类目优化</h4>
+                    <div class="flow-nodes">
+                        <div class="flow-node" id="node-stage1">information<br><small>(102,348篇)</small></div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node" id="node-stage2">information service<br><small>(5,238篇)</small></div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node" id="node-stage3">information NEAR/3 service<br><small>(487篇)</small></div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node" id="node-doc1">📄 命中并验证文献一</div>
+                    </div>
+                </div>
+
+                <div class="flow-column">
+                    <h4>第二组：可信度类目优化</h4>
+                    <div class="flow-nodes">
+                        <div class="flow-node" id="node-stage4">information credibility<br><small>(3,821篇)</small></div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node" id="node-stage5">information NEAR/3 credibility<br><small>(245篇)</small></div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node" id="node-doc2">📄 命中并验证文献二</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 模拟全库映射字典表
+        const searchDatabase = {
+            "information": {
+                count: 102348,
+                tip: "结果过多，请增加关键词。",
+                nodes: ["node-stage1"]
+            },
+            "information service": {
+                count: 5238,
+                tip: null,
+                nodes: ["node-stage1", "node-stage2"]
+            },
+            "information near/3 service": {
+                count: 487,
+                tip: null,
+                nodes: ["node-stage1", "node-stage2", "node-stage3", "node-doc1"],
+                explanation: "核心原理解析：系统检测到关键词 <span class='kw-highlight kw-1'>information</span> 与 <span class='kw-highlight kw-2'>service</span> 在文章物理文本片段中的相对间隔距离小于等于3个单词，完全契合 <strong>NEAR/3</strong> 位置逻辑规则。",
+                document: {
+                    tag: "Core Journal Article",
+                    title: "Research on Priori Knowledge Analysis and <span class='kw-highlight kw-1'>Information</span> <span class='kw-highlight kw-2'>Service</span> <span class='kw-highlight kw-3'>Strategy</span> of Exploratory Search Behavior",
+                    distance: 2,
+                    abstract: "本研究探讨探索式搜索行为中的先验知识分析，并提出针对不同用户类型的信息服务策略，包括获取外部信息、浏览参考资源、信息检索策略设计与优化。"
+                }
+            },
+            "information credibility": {
+                count: 3821,
+                tip: null,
+                nodes: ["node-stage4"]
+            },
+            "information near/3 credibility": {
+                count: 245,
+                tip: null,
+                nodes: ["node-stage4", "node-stage5", "node-doc2"],
+                explanation: "核心原理解析：系统检测到关键词 <span class='kw-highlight kw-1'>information</span> 与 <span class='kw-highlight kw-2'>credibility</span> 在目标文本片段中的物理跨度仅为1个单词，完全契合 <strong>NEAR/3</strong> 位置逻辑规则限制。",
+                document: {
+                    tag: "IEEE Compliance Record",
+                    title: "Research on the <span class='kw-highlight kw-2'>Credibility</span> Assessment of Network Health <span class='kw-highlight kw-1'>Information</span> Based on Multidimensional <span class='kw-highlight kw-1'>Information</span> Characteristics",
+                    distance: 1,
+                    abstract: "本研究建立网络健康信息可信度评估模型，重点分析真实性、权威性、完整性、适用性以及信息来源可信度等因素。"
+                }
+            }
+        };
+
+        // 统一控制台调用入口
+        function triggerDemo(queryString, btnElement, stepIndex) {
+            // 切换高亮控制按钮样式
+            document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            // 联动填充主检索框
+            document.getElementById('mainSearchInput').value = queryString;
+            executeSearch();
+        }
+
+        // 清除重置回到干净状态
+        function resetDemo(btnElement) {
+            document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+            
+            document.getElementById('mainSearchInput').value = "";
+            document.getElementById('resultsSection').style.display = "none";
+            
+            // 剔除所有流程图高亮
+            document.querySelectorAll('.flow-node').forEach(node => node.classList.remove('active'));
+        }
+
+        // 核心执行逻辑
+        function executeSearch() {
+            const rawQuery = document.getElementById('mainSearchInput').value.trim();
+            const normalizedQuery = rawQuery.toLowerCase().replace(/\s+/g, ' ');
+
+            const loadingSection = document.getElementById('loadingSection');
+            const resultsSection = document.getElementById('resultsSection');
+
+            // 唤醒检索Loading吞吐动画
+            loadingSection.style.display = "block";
+            resultsSection.style.display = "none";
+
+            // 模拟正规科研数据库后台索引遍历耗时
+            setTimeout(() => {
+                loadingSection.style.display = "none";
+                
+                // 默认降级容错机制
+                let matchData = searchDatabase[normalizedQuery];
+                
+                // 渲染结果
+                if (matchData) {
+                    renderResults(matchData);
+                    highlightFlowchart(matchData.nodes);
+                } else {
+                    // 处理非标自定义输入的反馈
+                    document.getElementById('metaOutput').innerHTML = `
+                        <div class="result-meta">
+                            <span>🔍 检索式：<strong>${rawQuery}</strong></span>
+                            <span>未找到匹配的模拟数据，请输入提示面板中的标准教学序列。</span>
+                        </div>`;
+                    document.getElementById('explanationOutput').innerHTML = "";
+                    document.getElementById('documentsOutput').innerHTML = "";
+                    highlightFlowchart([]);
+                }
+                
+                // 触发整体结果卡片淡入
+                resultsSection.style.display = "block";
+                resultsSection.classList.remove('fade-in');
+                void resultsSection.offsetWidth; // 触发回流重绘重置动画
+                resultsSection.classList.add('fade-in');
+
+            }, 750);
+        }
+
+        // 动态拼装DOM
+        function renderResults(data) {
+            // 1. Meta统计区
+            let metaHtml = `
+                <div class="result-meta">
+                    <span>系统精确结果： 共找到 <span class="count-badge">${data.count.toLocaleString()}</span> 篇文献</span>
+            `;
+            if (data.tip) {
+                metaHtml += `<span class="alert-tip">⚠️ 提示：${data.tip}</span>`;
+            }
+            metaHtml += `</div>`;
+            document.getElementById('metaOutput').innerHTML = metaHtml;
+
+            // 2. 算符原理解析区
+            if (data.explanation) {
+                document.getElementById('explanationOutput').innerHTML = `
+                    <div class="explanation-panel">
+                        <div class="explanation-title">⚙️ 词位置检索逻辑核验成功</div>
+                        <p style="font-size: 13px; color:#434343;">${data.explanation}</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('explanationOutput').innerHTML = "";
+            }
+
+            // 3. 文献卡片明细区
+            if (data.document) {
+                const doc = data.document;
+                document.getElementById('documentsOutput').innerHTML = `
+                    <div class="document-card">
+                        <div class="doc-header">
+                            <span class="doc-tag">${doc.tag}</span>
+                            <h3 class="doc-title">${doc.title}</h3>
+                        </div>
+                        <div class="metrics-bar">
+                            <div>计算位置矩阵：<span class="distance-val">词距 = ${doc.distance}</span></div>
+                            <div class="check-status">✓ 符合NEAR/3限制条件</div>
+                        </div>
+                        <div class="doc-abstract">
+                            <strong>中文摘要 (Abstract):</strong>
+                            ${doc.abstract}
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('documentsOutput').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ccc; background:#fff; border-radius:4px;">
+                        💡 当前检索颗粒度较粗，请点击上方控制台下一步以应用“词位置检索（Proximity Search）”算符提取范例文献。
+                    </div>
+                `;
+            }
+        }
+
+        // 全景流程图节点联动高亮控制
+        function highlightFlowchart(activeNodeIds) {
+            document.querySelectorAll('.flow-node').forEach(node => {
+                if (activeNodeIds && activeNodeIds.includes(node.id)) {
+                    node.classList.add('active');
+                } else {
+                    node.classList.remove('active');
+                }
+            });
+        }
+
+        // 监听单选框交互样式
+        document.querySelectorAll('input[name="searchMode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.mode-label').forEach(lbl => lbl.classList.remove('active'));
+                if(this.checked) {
+                    this.parentElement.classList.add('active');
+                }
+            });
+        });
+
+        // 初始化默认执行一次检索展现初始面貌
+        window.onload = function() {
+            executeSearch();
+        };
+    </script>
+</body>
+</html>
